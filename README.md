@@ -9,7 +9,7 @@
 
 This page has all the information you'll need for contributing to Keploy as well as kickstarting your journey as DevRel.
 
-**Introduction**
+**Introduction*
 
 Once you join the program, you will learn all about Keploy’s community, understand the product and showcase your contributions. You will have a chance to be involved in community, meet other contributors and establish a great network for yourself. The Keploy team is looking for ambitious individuals who wish to grow alongside, expanding their network and supporting the cause as it grows.
 
