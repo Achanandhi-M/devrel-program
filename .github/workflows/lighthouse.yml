@@ -37,36 +37,35 @@ jobs:
           cd ..
           sleep 5
 
-      - name: Create Lighthouse config
-        run: |
-          cat <<EOF > lighthouserc.json
-          {
-            "ci": {
-              "collect": {
-                "url": ["http://localhost:3000", "http://localhost:3001"],
-                "numberOfRuns": 1
-              },
-              "upload": {
-                "target": "filesystem",
-                "outputDir": ".lighthouseci"
-              }
-            }
-          }
-          EOF
-
-      - name: Run Lighthouse CI
+      - name: Audit URLs using Lighthouse
         uses: treosh/lighthouse-ci-action@v12
+        id: lighthouse
         with:
-          configPath: './lighthouserc.json'
-          uploadArtifacts: true
-
-      - name: Generate Lighthouse report markdown
-        run: |
-          node .github/scripts/generate-lighthouse-script.js
+            urls: |
+              http://localhost:3000/
+              http://localhost:3001
+            uploadArtifacts: true 
+            temporaryPublicStorage: true 
 
       - name: Comment on PR with Lighthouse scores
         uses: peter-evans/create-or-update-comment@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body-file: lighthouse-comment.md
+          body: |
+            **Lighthouse Scores for the PR and Main Branches:**
+
+            **PR Branch (http://localhost:3001)**
+            | Metric               | Score |
+            | -------------------- | ----- |
+            | Performance          | ${{ steps.lighthouse.outputs['http://localhost:3001.performance'] }} |
+            | Accessibility        | ${{ steps.lighthouse.outputs['http://localhost:3001.accessibility'] }} |
+            | Best Practices       | ${{ steps.lighthouse.outputs['http://localhost:3001.best-practices'] }} |
+            | SEO                  | ${{ steps.lighthouse.outputs['http://localhost:3001.seo'] }} |
+            
+            **Main Branch (http://localhost:3000)**
+            | Metric               | Score |
+            | -------------------- | ----- |
+            | Performance          | ${{ steps.lighthouse.outputs['http://localhost:3000.performance'] }} |
+            | Accessibility        | ${{ steps.lighthouse.outputs['http://localhost:3000.accessibility'] }} |
+            | Best Practices       | ${{ steps.lighthouse.outputs['http://localhost:3000.best-practices'] }} |
+            | SEO                  | ${{ steps.lighthouse.outputs['http://localhost:3000.seo'] }} |
