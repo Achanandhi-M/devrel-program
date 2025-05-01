@@ -52,7 +52,7 @@ jobs:
           node-version: 18
 
       - name: Parse Lighthouse reports to markdown
-        run: node .github/scripts/parse-lighthouse.js
+        run: node .github/scripts/generate-lighthouse-script.js
 
       - name: Comment on PR with Lighthouse scores
         uses: peter-evans/create-or-update-comment@v4
