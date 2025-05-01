@@ -37,36 +37,23 @@ jobs:
           cd ..
           sleep 5
 
-      - name: Create Lighthouse config
-        run: |
-          cat <<EOF > lighthouserc.json
-          {
-            "ci": {
-              "collect": {
-                "url": ["http://localhost:3000", "http://localhost:3001"],
-                "numberOfRuns": 1
-              },
-              "upload": {
-                "target": "filesystem",
-                "outputDir": "lhci_reports"
-              }
-            }
-          }
-          EOF
-
-      - name: Run Lighthouse CI
+      - name: Audit URLs using Lighthouse
         uses: treosh/lighthouse-ci-action@v12
         with:
-          configPath: './lighthouserc.json'
+          urls: |
+            http://localhost:3000/
+            http://localhost:3001/
           uploadArtifacts: true
+          temporaryPublicStorage: false
 
-
-      - name: Format Lighthouse report as Markdown
+      - name: Install and run lighthouse-report-formatter
         id: format-report
-        uses: iyu88/lighthouse-report-formatter@1.0.0 
-        with:
-          lh_directory: ./
-          manifest_path: lhci_reports
+        run: |
+          npm install -g lighthouse-report-formatter
+          markdown=$(lighthouse-report-formatter --lh-directory .lighthouseci --manifest-path .lighthouseci)
+          echo "comments<<EOF" >> $GITHUB_OUTPUT
+          echo "$markdown" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Comment on PR with Lighthouse scores
         uses: peter-evans/create-or-update-comment@v4
