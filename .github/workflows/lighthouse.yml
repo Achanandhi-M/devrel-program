@@ -39,33 +39,24 @@ jobs:
 
       - name: Audit URLs using Lighthouse
         uses: treosh/lighthouse-ci-action@v12
-        id: lighthouse
         with:
-            urls: |
-              http://localhost:3000/
-              http://localhost:3001
-            uploadArtifacts: true 
-            temporaryPublicStorage: true 
+          urls: |
+            http://localhost:3000/
+            http://localhost:3001/
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      - name: Set up Node for script
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Parse Lighthouse reports to markdown
+        run: node .github/scripts/parse-lighthouse.js
 
       - name: Comment on PR with Lighthouse scores
         uses: peter-evans/create-or-update-comment@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          body: |
-            **Lighthouse Scores for the PR and Main Branches:**
-
-            **PR Branch (http://localhost:3001)**
-            | Metric               | Score |
-            | -------------------- | ----- |
-            | Performance          | ${{ steps.lighthouse.outputs['http://localhost:3001.performance'] }} |
-            | Accessibility        | ${{ steps.lighthouse.outputs['http://localhost:3001.accessibility'] }} |
-            | Best Practices       | ${{ steps.lighthouse.outputs['http://localhost:3001.best-practices'] }} |
-            | SEO                  | ${{ steps.lighthouse.outputs['http://localhost:3001.seo'] }} |
-            
-            **Main Branch (http://localhost:3000)**
-            | Metric               | Score |
-            | -------------------- | ----- |
-            | Performance          | ${{ steps.lighthouse.outputs['http://localhost:3000.performance'] }} |
-            | Accessibility        | ${{ steps.lighthouse.outputs['http://localhost:3000.accessibility'] }} |
-            | Best Practices       | ${{ steps.lighthouse.outputs['http://localhost:3000.best-practices'] }} |
-            | SEO                  | ${{ steps.lighthouse.outputs['http://localhost:3000.seo'] }} |
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: lighthouse-comment.md

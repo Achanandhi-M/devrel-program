@@ -1,40 +1,37 @@
 const fs = require('fs');
-const path = require('path');
 
-const dir = '.lighthouseci';
-const files = fs.readdirSync(dir)
-  .filter(f => f.endsWith('.json') && f.includes('.lhr-'))
-  .map(f => path.join(dir, f))
-  .sort(); // You can use sort by date if needed
-
-if (files.length < 2) {
-  console.error('❌ Expected at least 2 Lighthouse JSON reports.');
-  process.exit(1);
+function extractScores(reportPath) {
+  const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+  return {
+    performance: report.categories.performance.score * 100,
+    accessibility: report.categories.accessibility.score * 100,
+    bestPractices: report.categories['best-practices'].score * 100,
+    seo: report.categories.seo.score * 100,
+  };
 }
 
-const [mainFile, prFile] = files; // First = main, second = PR
+const main = extractScores('.lighthouseci/localhost_3000.report.json');
+const pr = extractScores('.lighthouseci/localhost_3001.report.json');
 
-const categories = ['performance', 'accessibility', 'best-practices', 'seo', 'pwa'];
+const markdown = `
+**Lighthouse Scores for the PR and Main Branches**
 
-function getScores(filePath) {
-  const report = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-  const result = {};
-  for (const cat of categories) {
-    result[cat] = report.categories[cat]?.score ? report.categories[cat].score * 100 : 'N/A';
-  }
-  return result;
-}
+**PR Branch (http://localhost:3001)**
+| Metric         | Score |
+|----------------|-------|
+| Performance    | ${pr.performance} |
+| Accessibility  | ${pr.accessibility} |
+| Best Practices | ${pr.bestPractices} |
+| SEO            | ${pr.seo} |
 
-const mainScores = getScores(mainFile);
-const prScores = getScores(prFile);
-
-let markdown = '### 🚦 Lighthouse Score Comparison\n';
-markdown += '| Category        | Main Branch | PR Branch |\n';
-markdown += '|-----------------|-------------|-----------|\n';
-
-for (const cat of categories) {
-  markdown += `| ${cat.padEnd(15)} | ${mainScores[cat]}         | ${prScores[cat]}       |\n`;
-}
+**Main Branch (http://localhost:3000)**
+| Metric         | Score |
+|----------------|-------|
+| Performance    | ${main.performance} |
+| Accessibility  | ${main.accessibility} |
+| Best Practices | ${main.bestPractices} |
+| SEO            | ${main.seo} |
+`;
 
 fs.writeFileSync('lighthouse-comment.md', markdown);
-console.log('✅ Generated lighthouse-comment.md');
+console.log('✅ Lighthouse scores written to lighthouse-comment.md');
