@@ -35,15 +35,9 @@ jobs:
           cd ..
           sleep 5
 
-      - name: Create output directory for Lighthouse
-        run: mkdir -p ${{ github.workspace }}/tmp/artifacts
-
-      - name: Run Lighthouse audit for both PR and Main
-        uses: foo-software/lighthouse-check-action@master
+      - name: Audit URLs using Lighthouse
+        uses: treosh/lighthouse-ci-action@v12
         with:
-          gitAuthor: ${{ github.actor }}
-          gitBranch: ${{ github.head_ref }}
-          gitHubAccessToken: ${{ secrets.LIGHTHOUSE_TOKEN }}
-          outputDirectory: ${{ github.workspace }}/tmp/artifacts
-          urls: 'http://localhost:3000/?branch=main,http://localhost:3001/?branch=pr'
-          sha: ${{ github.sha }}
+          urls: |
+            http://localhost:3000/
+            http://localhost:3001/
