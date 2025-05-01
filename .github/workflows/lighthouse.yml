@@ -24,10 +24,12 @@ jobs:
         run: |
           serve . -l 3001 &
           sleep 5
+
       - name: Checkout main branch into separate folder
         run: |
           git fetch origin main
           git worktree add main-branch origin/main
+
       - name: Serve Main branch (background on port 3000)
         run: |
           cd main-branch
@@ -35,11 +37,39 @@ jobs:
           cd ..
           sleep 5
 
-      - name: Audit URLs using Lighthouse
+      - name: Create Lighthouse config
+        run: |
+          cat <<EOF > lighthouserc.json
+          {
+            "ci": {
+              "collect": {
+                "url": ["http://localhost:3000", "http://localhost:3001"],
+                "numberOfRuns": 1
+              },
+              "upload": {
+                "target": "filesystem",
+                "outputDir": "lhci_reports"
+              }
+            }
+          }
+          EOF
+
+      - name: Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v12
         with:
-          urls: |
-            http://localhost:3000/
-            http://localhost:3001/
-          uploadArtifacts: true 
-          temporaryPublicStorage: true
+          configPath: './lighthouserc.json'
+          uploadArtifacts: true
+
+      - name: Format Lighthouse report as Markdown
+        id: format-report
+        uses: iyu88/lighthouse-report-formatter@v1.0.0
+        with:
+          lh_directory: ./
+          manifest_path: lhci_reports
+
+      - name: Comment on PR with Lighthouse scores
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ steps.format-report.outputs.comments }}
