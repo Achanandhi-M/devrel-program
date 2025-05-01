@@ -1,7 +1,26 @@
 const fs = require('fs');
+const path = require('path');
 
-function extractScores(reportPath) {
-  const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+const dir = '.lighthouseci';
+const files = fs.readdirSync(dir).filter(file => file.endsWith('.report.json'));
+
+if (files.length < 2) {
+  console.error('❌ Not enough Lighthouse reports found.');
+  process.exit(1);
+}
+
+let mainReport = '';
+let prReport = '';
+
+for (const file of files) {
+  const json = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
+  const url = json.finalUrl;
+
+  if (url.includes('3000')) mainReport = json;
+  else if (url.includes('3001')) prReport = json;
+}
+
+function extract(report) {
   return {
     performance: report.categories.performance.score * 100,
     accessibility: report.categories.accessibility.score * 100,
@@ -10,13 +29,13 @@ function extractScores(reportPath) {
   };
 }
 
-const main = extractScores('.lighthouseci/localhost_3000.report.json');
-const pr = extractScores('.lighthouseci/localhost_3001.report.json');
+const main = extract(mainReport);
+const pr = extract(prReport);
 
-const markdown = `
-**Lighthouse Scores for the PR and Main Branches**
+const md = `
+**🔍 Lighthouse Scores**
 
-**PR Branch (http://localhost:3001)**
+**⚡ PR Branch (http://localhost:3001)**
 | Metric         | Score |
 |----------------|-------|
 | Performance    | ${pr.performance} |
@@ -24,7 +43,7 @@ const markdown = `
 | Best Practices | ${pr.bestPractices} |
 | SEO            | ${pr.seo} |
 
-**Main Branch (http://localhost:3000)**
+**📦 Main Branch (http://localhost:3000)**
 | Metric         | Score |
 |----------------|-------|
 | Performance    | ${main.performance} |
@@ -33,5 +52,5 @@ const markdown = `
 | SEO            | ${main.seo} |
 `;
 
-fs.writeFileSync('lighthouse-comment.md', markdown);
-console.log('✅ Lighthouse scores written to lighthouse-comment.md');
+fs.writeFileSync('lighthouse-comment.md', md);
+console.log('✅ Comment written to lighthouse-comment.md');
